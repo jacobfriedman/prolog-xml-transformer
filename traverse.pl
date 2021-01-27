@@ -12,6 +12,7 @@
 :- use_module(library(record)).
 :- use_module(library(option)).
 
+
 %!	traverse(+List, +Options, -List).
 :-  record options(
             traversable_structures      :list=[_], 
@@ -19,54 +20,37 @@
            % transform_structures_via    :callable=true
     ).
 
-traverse([], Options, Output_Node) :- Output_Node = [].
-    
-traverse([FirstNode | RemainingNodes], Options, Output_Traversed_Transformed_List) :- 
-    
-    %  Merge Options with Defaults
-    make_options(Options, Unified_Options),
-    options_traversable_structures(Unified_Options, Traversable_Structures),
 
-    writeln(FirstNode),
-    %   Check if Term is Traversable
-    (   memberchk(FirstNode, Traversable_Structures) 
-    ->  traverse(FirstNode, Options, Traversed_FirstNode)
-    ;   writeln('no'),
-    !
-    ),
+traverse([Attribute=Value | RemainingAttributes], Options, Output_Attributes_List) :- 
+    option(traversable_structures(Structures), Traversable_Structures),
+    memberchk(Attribute=Value, Traversable_Structures)
+    -> traverse(Attribute=Value, Options, Traversed_FirstAttribute),
+    traverse(RemainingAttributes, Options, Traversed_RemainingAttributes),
+    Output_Attributes_List = [Attribute=Value | Traversed_RemainingAttributes],
+    !.
+
+traverse([FirstNode | RemainingNodes], Options, Output_Traversed_Transformed_List) :- 
+    option(traversable_structures(Structures), Traversable_Structures),
+    memberchk(FirstNode, Traversable_Structures) -> traverse(FirstNode, Options, Traversed_FirstNode),
     traverse(RemainingNodes, Options, Traversed_RemainingNodes),
-    %   Combine FirstNode and RemainingNodes into an Output List
-    writeln(RemainingNodes),
     Output_Traversed_Transformed_List = [Traversed_FirstNode | Traversed_RemainingNodes],
     !.
 
+traverse([], Options, Output_Node) :- Output_Node = [].
+
 traverse(Term, Options, Output_Term) :- 
+    option(traversable_structures(Structures), Traversable_Structures),
+    memberchk(Term, Traversable_Structures) -> traverse(Term, Options, Traversed_Term),
 
-    % Merge Options with Defaults
-    make_options(Options, Unified_Options),
-    options_traversable_structures(Unified_Options, Traversable_Structures),
-
-    % Establish Transformation Options
-    options_transformable_structures(Unified_Options, Transformable_Structures),
-    % options_transform_structures_via(Unified_Options, Transform_Structures_Via),
-
-   /*  Transformation_Options = [Transformable_Structures, Transform_Structures_Via], */
     %   Check if Term is a Compound
-    (   atom(Term)
-    ->      true
-    ;       compound_name_arguments(Term, Functor, CompoundArguments), 
-    !
-    ),
-    transform(Functor, Options, Transformed_Functor),
+    compound(Term) -> compound_name_arguments(Term, Functor, CompoundArguments), 
+    option(transformable_structures(Structures), Transformable_Structures),
+    transformable(Term, Transformable_Structures) -> transform(Functor, Options, Transformed_Functor),
 
     % This is where we have to interrupt key=value attribute pairs and rebuild them as transformation pairs.
     % https://github.com/rla/prolog-vdom/blob/master/prolog/vdom_build_attrs.pl
+    memberchk(CompoundArguments, Traversable_Structures) -> traverse(CompoundArguments, Options, Traversed_CompoundArguments),
 
-    (   memberchk(CompoundArguments, Traversable_Structures)
-    ->  traverse(CompoundArguments, Options, Traversed_CompoundArguments)
-    ;   
-    !  
-    ),
     traverse(CompoundArguments, Options, Traversed_CompoundArguments),
     compound_name_arguments(Compounded_Output_Term, Term, Traversed_CompoundArguments),
 
@@ -81,13 +65,12 @@ traverse(Term, Options, Output_Term) :-
 
 transform(Term, Options, Output) :-
 writeln('Transforming: '), print(Term).
-/*  % Initial Clause Filter e.g. foo(bar,_,_,baz), [a,b,_] ?
+  % Initial Clause Filter e.g. foo(bar,_,_,baz), [a,b,_] ?
     (memberchk(call(Function), Options)
         -> !; !.
     ),
-*/
-   
-   /* % If there's a transformer function, call it.
+
+   % If there's a transformer function, call it.
     (memberchk(call(Function), Options) 
         % Can we call this? 
         -> catch(call(Function, Term, Output),
@@ -96,7 +79,6 @@ writeln('Transforming: '), print(Term).
                 ), !
         ; Term = Output, !
     ), Term = Output, !.
-*/
 
 % TODO 
 uniquify_xml_node_via_id(Node) :- !.
