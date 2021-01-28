@@ -28,15 +28,7 @@ transformable_structures(Options, Transformable_Structures) :-
             transformable_structures    :list=[_]
            % transform_structures_via    :callable=true
     ).
-/*
-traverse([ Attribute=Value | RemainingAttributes ], Options, Output_Attributes_List) :- 
-    traversable_structures(Options, Traversable_Structures),
-    memberchk(Attribute=Value, Traversable_Structures)
-    -> transform(Attribute=Value, Options, Transformed_FirstAttribute),
-    traverse(RemainingAttributes, Options, Traversed_RemainingAttributes),
-    Output_Attributes_List = [ Transformed_FirstAttribute | Traversed_RemainingAttributes ],
-    !.
-*/
+
 traverse([FirstNode | RemainingNodes], Options, Output_Traversed_List) :- 
     traversable_structures(Options, Traversable_Structures),
     memberchk(FirstNode, Traversable_Structures) -> traverse(FirstNode, Options, Traversed_FirstNode),
@@ -50,7 +42,7 @@ traverse([Term], Options, Output_Node) :-
     traverse(Term),
     Output_Node = [Term], !.
 
-traverse(A=B, Options, Output_Node) :- writeln('A=B'), Output_Node = 'A=B', !.
+traverse(A=B, Options, Output_Node) :- transform((A=B), Options, Output_Node), !.
 
 traverse(Term, Options, Output_Term) :- 
     (   atom(Term) 
@@ -59,20 +51,11 @@ traverse(Term, Options, Output_Term) :-
     ), !.
 
 traverse_compound(Compound, Options, Output_Term) :-
-    writeln(Compound),
-    writeln(Compound),
-
     compound_name_arguments(Compound, Functor, CompoundArguments),
     transformable_structures(Options, Transformable_Structures),
     memberchk(Functor, Transformable_Structures) -> transform(Functor, Options, Transformed_Functor),
-
     memberchk(CompoundArguments, Traversable_Structures) -> traverse(CompoundArguments, Options, Traversed_CompoundArguments),
-
-    writeln(Traversed_CompoundArguments),
-    writeln(Traversed_CompoundArguments),
-
     compound_name_arguments(Compounded_Output_Term, Transformed_Functor, Traversed_CompoundArguments),
-
     Output_Term = Compounded_Output_Term.
 
 %!	traverse(+List, +Options, -List).
