@@ -12,6 +12,13 @@
 :- use_module(library(record)).
 :- use_module(library(option)).
 
+%!	traverse(+List, +Options, -List).
+:-  record options(
+            traversable_structures      :list=[_], 
+            transformable_structures    :list=[_]
+           % transform_structures_via    :callable=true
+    ).
+
 % Set up Options (There should be a better way to unify with defaults...)
 traversable_structures(Options, Traversable_Structures) :-
     make_options(Options, Unified_Options),
@@ -20,13 +27,6 @@ transformable_structures(Options, Transformable_Structures) :-
     make_options(Options, Unified_Options),
     options_transformable_structures(Unified_Options, Transformable_Structures).
 
-%!	traverse(+List, +Options, -List).
-:-  record options(
-            traversable_structures      :list=[_], 
-            transformable_structures    :list=[_]
-           % transform_structures_via    :callable=true
-    ).
-
 traverse([FirstNode | RemainingNodes], Options, Output_Traversed_List) :- 
     traversable_structures(Options, Traversable_Structures),
     memberchk(FirstNode, Traversable_Structures) -> traverse(FirstNode, Options, Traversed_FirstNode),
@@ -34,7 +34,7 @@ traverse([FirstNode | RemainingNodes], Options, Output_Traversed_List) :-
     Output_Traversed_List = [ Traversed_FirstNode | Traversed_RemainingNodes ],
     !.
 
-traverse([], Options, Output_Node) :- Output_Node = [], !.
+traverse([], _Options, Output_Node) :- Output_Node = [], !.
 
 traverse([Term], Options, Output_Node) :- 
     traverse(Term),
