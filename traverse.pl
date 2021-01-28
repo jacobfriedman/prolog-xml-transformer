@@ -12,13 +12,11 @@
 :- use_module(library(record)).
 :- use_module(library(option)).
 
+% Set up Options (There should be a better way to unify with defaults...)
 traversable_structures(Options, Traversable_Structures) :-
-    %  Merge Options with Defaults
     make_options(Options, Unified_Options),
     options_traversable_structures(Unified_Options, Traversable_Structures).
-
 transformable_structures(Options, Transformable_Structures) :-
-    %  Merge Options with Defaults
     make_options(Options, Unified_Options),
     options_transformable_structures(Unified_Options, Transformable_Structures).
 
@@ -42,8 +40,10 @@ traverse([Term], Options, Output_Node) :-
     traverse(Term),
     Output_Node = [Term], !.
 
+% XML Attribute Traversal
 traverse(A=B, Options, Output_Node) :- transform((A=B), Options, Output_Node), !.
 
+% Not an Attribute or Atom? Probably a Compound.
 traverse(Term, Options, Output_Term) :- 
     (   atom(Term) 
     ->  transform(Term, Options, Output_Term)
